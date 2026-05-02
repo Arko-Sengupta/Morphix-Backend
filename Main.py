@@ -20,6 +20,7 @@ _default_origins = [
     "http://localhost:5173",
     "http://localhost:5174",
     "http://localhost:5175",
+    "https://morphix-frontend.vercel.app"
 ]
 _extra = os.getenv("CORS_ORIGINS", "")
 _origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
