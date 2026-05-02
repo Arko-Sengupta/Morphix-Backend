@@ -1,54 +1,31 @@
 import base64
 import logging
-import easyocr
-import numpy as np
-from PIL import Image
 from io import BytesIO
+from Tools.HFClient import HFClient
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+import os
 
 logger = logging.getLogger(__name__)
-reader = None
-
-def GetReader():
-    try:
-        global reader
-        if reader is None:
-            logger.info("Initializing EasyOCR reader")
-            reader = easyocr.Reader(["en"])
-        return reader
-    except Exception:
-        logger.error("Failed to initialize EasyOCR reader", exc_info=True)
-        raise
-
-def GroupLines(text_data, threshold=15):
-    if not text_data:
-        return ""
-    sorted_data = sorted(text_data, key=lambda item: (item[0][0][1], item[0][0][0]))
-    lines = []
-    current_y = sorted_data[0][0][0][1]
-    current_line = []
-    for bbox, text, _ in sorted_data:
-        y = bbox[0][1]
-        if abs(y - current_y) <= threshold:
-            current_line.append(text)
-        else:
-            lines.append(" ".join(current_line))
-            current_line = [text]
-            current_y = y
-    if current_line:
-        lines.append(" ".join(current_line))
-    return "\n".join(lines)
 
 class ImageToPDF:
+    def __init__(self):
+        try:
+            self.client = HFClient()
+            self.model_id = os.getenv("HF_MODEL_IMAGE_TO_TEXT")
+            logger.info("ImageToPDF initialized with model: %s", self.model_id)
+        except Exception:
+            logger.error("Failed to initialize ImageToPDF", exc_info=True)
+            raise
+
     def Convert(self, file_bytes: bytes = None, text_input: str = None, options: dict = None) -> dict:
         try:
             logger.info("Starting ImageToPDF conversion")
-            image = Image.open(BytesIO(file_bytes))
-            text_data = GetReader().readtext(np.array(image))
-            text = GroupLines(text_data)
+            response = self.client.Call(self.model_id, binary_payload=file_bytes, content_type="image/jpeg")
+            data = response.json()
+            text = data[0].get("generated_text", "") if isinstance(data, list) else data.get("generated_text", "")
 
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=letter, title="Document")
