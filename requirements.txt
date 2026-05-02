@@ -1,0 +1,14 @@
+
+# API Server
+fastapi==0.115.12
+uvicorn==0.34.0
+python-multipart==0.0.20
+
+# Configuration & HTTP
+python-dotenv==1.0.1
+requests==2.32.5
+
+# Image & Document Processing
+Pillow==12.2.0
+pypdf==6.7.5
+reportlab==4.5.0
