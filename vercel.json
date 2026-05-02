@@ -1,15 +1,14 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "Api/Index.py",
-      "use": "@vercel/python"
+  "functions": {
+    "Api/Index.py": {
+      "runtime": "python3.12"
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/Api/Index/$1"
+      "source": "/(.*)",
+      "destination": "/Api/Index"
     }
   ]
 }
