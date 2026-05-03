@@ -1,31 +1,30 @@
 import base64
 import logging
+import numpy as np
+from PIL import Image
 from io import BytesIO
-from Tools.HFClient import HFClient
+from rapidocr_onnxruntime import RapidOCR
 from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
-import os
 
 logger = logging.getLogger(__name__)
+_engine = None
+
+def GetEngine():
+    global _engine
+    if _engine is None:
+        _engine = RapidOCR()
+    return _engine
 
 class ImageToPDF:
-    def __init__(self):
-        try:
-            self.client = HFClient()
-            self.model_id = os.getenv("HF_MODEL_IMAGE_TO_TEXT")
-            logger.info("ImageToPDF initialized with model: %s", self.model_id)
-        except Exception:
-            logger.error("Failed to initialize ImageToPDF", exc_info=True)
-            raise
-
     def Convert(self, file_bytes: bytes = None, text_input: str = None, options: dict = None) -> dict:
         try:
             logger.info("Starting ImageToPDF conversion")
-            response = self.client.Call(self.model_id, binary_payload=file_bytes, content_type="image/jpeg")
-            data = response.json()
-            text = data[0].get("generated_text", "") if isinstance(data, list) else data.get("generated_text", "")
+            image = np.array(Image.open(BytesIO(file_bytes)).convert("RGB"))
+            result, _ = GetEngine()(image)
+            text = "\n".join([item[1] for item in result]) if result else ""
 
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=letter, title="Document")

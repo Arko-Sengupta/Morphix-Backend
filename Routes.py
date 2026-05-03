@@ -39,6 +39,8 @@ async def Convert(
         logger.info("Conversion requested: %s", conversion_type)
         file_bytes = await file.read() if file else None
         opts = json.loads(options) if options else {}
+        if file and file.filename:
+            opts["file_ext"] = file.filename.rsplit(".", 1)[-1].lower()
         result = ConvRouter.Convert(
             conversion_type,
             file_bytes=file_bytes,
